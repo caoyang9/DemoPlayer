@@ -11,6 +11,11 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.ContentObserver;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.hardware.input.InputManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
@@ -19,14 +24,15 @@ import android.os.Looper;
 import android.os.PowerManager;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.Display;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
-public class UserActivityMonitorService extends Service {
+public class UserActivityMonitorService extends Service implements SensorEventListener{
 
     private static final String TAG = "MonitorService";
-    private static final long TIMEOUT_MS = 20 * 1000; // 20秒测试
+    private static final long TIMEOUT_MS = 40 * 1000; // 20秒测试
     private static final String PREFS_NAME = "demo_prefs";
     private static final String KEY_LAST_TOUCH = "last_touch_time";
     private static final String CHANNEL_ID = "monitor_channel";
@@ -34,8 +40,11 @@ public class UserActivityMonitorService extends Service {
     private Handler handler;
     private SharedPreferences prefs;
     private long lastTouchTime;
-
     private BroadcastReceiver userActivityReceiver;
+    private SensorManager mSensorManager;
+    private Sensor mAccelerometer;
+    private PowerManager mPowerManager;
+    private static final float MOVEMENT_THRESHOLD = 0.4f;
 
     @Override
     public void onCreate() {
@@ -48,13 +57,23 @@ public class UserActivityMonitorService extends Service {
         // 启动前台服务
         startForegroundService();
 
+        mPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+
+        if (mAccelerometer != null) {
+            mSensorManager.registerListener((SensorEventListener) this, mAccelerometer,
+                    SensorManager.SENSOR_DELAY_UI);
+            Log.d(TAG, "加速度传感器监听已注册");
+        }
         userActivityReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
                 if (Intent.ACTION_SCREEN_ON.equals(action) ||
-                        Intent.ACTION_USER_PRESENT.equals(action)) {
-                    Log.d(TAG, "监听到屏幕亮起事件");
+                        Intent.ACTION_USER_PRESENT.equals(action) ||
+                        Intent.ACTION_SCREEN_OFF.equals(action)) {
+                    Log.d(TAG, "监听到解锁、屏幕亮/灭事件");
                     // 屏幕亮起或用户解锁，更新触摸事件
                     updateTouchTime(context);
                 }
@@ -64,9 +83,32 @@ public class UserActivityMonitorService extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_SCREEN_ON);
         filter.addAction(Intent.ACTION_USER_PRESENT);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
         registerReceiver(userActivityReceiver, filter);
     }
 
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            float x = event.values[0];
+            float y = event.values[1];
+            float z = event.values[2];
+
+            // 计算加速度变化（静止时约9.8）
+            float magnitude = (float) Math.sqrt(x*x + y*y + z*z);
+            float deviation = Math.abs(magnitude - SensorManager.GRAVITY_EARTH);
+
+            // 只要有明显偏离重力，认为手机正在被使用
+            if (deviation > MOVEMENT_THRESHOLD) {
+                Log.d(TAG, "手机正在被使用，更新用户活动时间");
+                updateTouchTime(getApplicationContext());
+            }
+        }
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "Service被重建");
@@ -204,6 +246,9 @@ public class UserActivityMonitorService extends Service {
             } catch (Exception e) {
                 Log.e(TAG, "注销广播接收器失败", e);
             }
+        }
+        if (mSensorManager != null) {
+            mSensorManager.unregisterListener(this);
         }
         handler.removeCallbacksAndMessages(null);
     }
