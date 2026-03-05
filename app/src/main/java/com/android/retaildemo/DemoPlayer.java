@@ -67,7 +67,7 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
     private static final String TAG = "DemoPlayer";
     private static final boolean DEBUG = false;
     // 达到阈值时间无交互，演示应用退出
-    private static final long INACTIVITY_TIMEOUT = 32 * 60 * 1000;
+    private static final long INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 //    private static final long INACTIVITY_TIMEOUT = 8 * 60 * 60 * 1000L;
     private Runnable mInactivityRunnable;
 
@@ -103,8 +103,11 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
                 | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
                 | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
         // 加载视频播放的布局文件
         setContentView(R.layout.retail_video);
+        // 立即应用一次全屏设置，使窗口显示前就设置了UI可见性
+        hideSystemUI();
 
         mPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         mHandler = new Handler();
@@ -180,6 +183,19 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         }
 
         loadVideo();
+    }
+
+    private void hideSystemUI() {
+        View decorView = getWindow().getDecorView();
+        decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        | View.SYSTEM_UI_FLAG_LOW_PROFILE
+        );
     }
 
     private void schedulePeriodicCleanup() {
