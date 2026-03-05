@@ -1,6 +1,9 @@
 package com.android.retaildemo.work;
 
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -25,12 +28,15 @@ public class WebViewHistoryCleanup {
         mainHandler.post(() -> {
             try {
                 Log.d(TAG, "在主线程开始清理 WebView 历史记录");
+                Context configContext;
+                Configuration configuration = Resources.getSystem().getConfiguration();
+                configContext = context.createConfigurationContext(configuration);
 
                 // 清理Chrome浏览器历史记录
 
 
                 // 创建一个临时的 WebView 实例
-                WebView webView = new WebView(context);
+                WebView webView = new WebView(configContext);
                 // 清除浏览历史
                 webView.clearHistory();
                 // 清除缓存
