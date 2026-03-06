@@ -40,6 +40,7 @@
             android:immersive="true"
             android:excludeFromRecents="true"
             android:screenOrientation="nosensor"
+            android:icon="@mipmap/demoplayer_icon"
             android:theme="@android:style/Theme.Wallpaper.NoTitleBar.Fullscreen">
             <intent-filter android:priority="6">
                 <action android:name="android.intent.action.MAIN" />
