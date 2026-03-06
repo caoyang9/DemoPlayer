@@ -72,9 +72,10 @@
             <intent-filter>
                 <action android:name="android.provider.Telephony.SECRET_CODE" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data
-                    android:scheme="android_secret_code"
-                    android:host="9876" />
+                <!-- 启动演示应用暗码 -->
+                <data android:scheme="android_secret_code" android:host="9876" />
+                <!-- 卸载演示应用暗码 -->
+                <data android:scheme="android_secret_code" android:host="5010" />
             </intent-filter>
         </receiver>
     </application>
