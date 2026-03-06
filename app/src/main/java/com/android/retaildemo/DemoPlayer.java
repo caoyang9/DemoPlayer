@@ -97,8 +97,8 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        setScreenOffTimeoutIfNeeded();
         stopMonitorService();
-
         // 确保屏幕常量、设备锁屏也能显示该窗口、自动解锁屏幕
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
                 | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
@@ -569,5 +569,22 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         Log.d(TAG, "onNewIntent 被调用, action=" + intent.getAction());
 
         setIntent(intent);
+    }
+
+    private void setScreenOffTimeoutIfNeeded() {
+        try {
+            // 获取当前无操作息屏时间
+            int currentTimeout = Settings.System.getInt(getContentResolver(),
+                    Settings.System.SCREEN_OFF_TIMEOUT);
+            Log.d(TAG, "Current screen timeout: " + currentTimeout + "ms");
+            int targetTimeout = 15000;
+            if (currentTimeout > targetTimeout) {
+                Settings.System.putInt(getContentResolver(),
+                        Settings.System.SCREEN_OFF_TIMEOUT,
+                        targetTimeout);
+            }
+        } catch (Settings.SettingNotFoundException e) {
+            Log.e(TAG, "Screen timeout setting not found", e);
+        }
     }
 }
