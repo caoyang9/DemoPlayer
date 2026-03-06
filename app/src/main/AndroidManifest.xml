@@ -38,7 +38,7 @@
             android:name=".DemoPlayer"
             android:exported="true"
             android:immersive="true"
-            android:excludeFromRecents="false"
+            android:excludeFromRecents="true"
             android:screenOrientation="nosensor"
             android:theme="@android:style/Theme.Wallpaper.NoTitleBar.Fullscreen">
             <intent-filter android:priority="6">
