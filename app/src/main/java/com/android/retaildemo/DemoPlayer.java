@@ -98,6 +98,7 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
     private static final int POWER_UPPER = 70;  // 上限70%
     private BroadcastReceiver mBatteryReceiver;
     private boolean mBatteryReceiverRegistered = false;
+    private boolean mBatteryProtectFlag = false;
 
     private class BatteryReceiver extends BroadcastReceiver {
         @Override
@@ -147,7 +148,9 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         hideSystemUI();
 
         // 创建电池状态变化广播接收器实例
-        mBatteryReceiver = new BatteryReceiver();
+        if (mBatteryProtectFlag) {
+            mBatteryReceiver = new BatteryReceiver();
+        }
 
         mPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         mHandler = new Handler();
@@ -447,7 +450,9 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
     private void exitToHomeScreen() {
         Log.d(TAG, "启动监听服务，演示应用退出。");
         // 关闭电池健康保护
-        startCharging();
+        if (mBatteryProtectFlag) {
+            startCharging();
+        }
         // 1. 保存当前触摸的时间戳
         saveTouchTime();
 
@@ -539,7 +544,7 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         super.onResume();
 
         // 注册电池状态变化系统广播接收器
-        if (!mBatteryReceiverRegistered) {
+        if (mBatteryProtectFlag && !mBatteryReceiverRegistered) {
             registerReceiver(mBatteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
             mBatteryReceiverRegistered = true;
         }
