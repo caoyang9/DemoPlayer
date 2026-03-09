@@ -18,24 +18,24 @@ package com.android.retaildemo;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.ContentObserver;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.PowerManager;
-import android.os.SystemClock;
-import android.os.UserManager;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
@@ -49,9 +49,11 @@ import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import com.android.retaildemo.utils.SystemPropertiesHelper;
 import com.android.retaildemo.work.CleanupWorker;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -92,6 +94,41 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
     private static final String PREFS_NAME = "demo_prefs";
     private static final String KEY_LAST_TOUCH = "last_touch_time";
     private static final String CLEANUP_WORK_NAME = "periodic_cleanup_work";
+    private static final int POWER_LOWER = 30;  // 下限30%
+    private static final int POWER_UPPER = 70;  // 上限70%
+    private BroadcastReceiver mBatteryReceiver;
+    private boolean mBatteryReceiverRegistered = false;
+
+    private class BatteryReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "BroadcastReceiver-batteryReceiver-onReceive()");
+            int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+            int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+            int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+            Log.d(TAG, "level: " + level + "; scale: " + scale + "; status: " + status);
+            float batteryPct = level * 100 / (float) scale;
+
+            // 是否在充电
+            boolean isCharging = (status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                    status == BatteryManager.BATTERY_STATUS_FULL);
+            Log.d(TAG, "isCharging: " + isCharging);
+
+            if (isCharging) {
+                if (batteryPct >= POWER_UPPER) {
+                    Log.d(TAG, "正在充电中，电量保护达到上限，准备停止充电");
+                    // 达到上限，停止充电
+                    stopCharging();
+                }
+            } else {
+                if (batteryPct <= POWER_LOWER && isPowerConnected()) {
+                    Log.d(TAG, "充电已连接，电量保护达到下限，准备开始充电");
+                    // 低于下限且有电源，恢复充电
+                    startCharging();
+                }
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -108,6 +145,9 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         setContentView(R.layout.retail_video);
         // 立即应用一次全屏设置，使窗口显示前就设置了UI可见性
         hideSystemUI();
+
+        // 创建电池状态变化广播接收器实例
+        mBatteryReceiver = new BatteryReceiver();
 
         mPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         mHandler = new Handler();
@@ -196,6 +236,42 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                         | View.SYSTEM_UI_FLAG_LOW_PROFILE
         );
+    }
+
+    /**
+     * 电源是否连接到充电状态
+     * @return boolean
+     */
+    private boolean isPowerConnected() {
+        Intent intent = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+        return plugged == BatteryManager.BATTERY_PLUGGED_AC ||
+                plugged == BatteryManager.BATTERY_PLUGGED_USB ||
+                plugged == BatteryManager.BATTERY_PLUGGED_WIRELESS;
+    }
+
+    private void stopCharging() {
+        try {
+            FileWriter fw = new FileWriter("/sys/class/power_supply/battery/charging_enabled");
+            fw.write("0");
+            fw.close();
+
+            Log.d(TAG, "Charging stopped!");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to stop charging", e);
+        }
+    }
+
+    private void startCharging() {
+        try {
+            FileWriter fw = new FileWriter("/sys/class/power_supply/battery/charging_enabled");
+            fw.write("1");
+            fw.close();
+
+            Log.d(TAG, "Charging resumed!");
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to start charging", e);
+        }
     }
 
     private void schedulePeriodicCleanup() {
@@ -370,6 +446,8 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
 
     private void exitToHomeScreen() {
         Log.d(TAG, "启动监听服务，演示应用退出。");
+        // 关闭电池健康保护
+        startCharging();
         // 1. 保存当前触摸的时间戳
         saveTouchTime();
 
@@ -448,12 +526,24 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         if (mHandler != null && mInactivityRunnable != null) {
             mHandler.removeCallbacks(mInactivityRunnable);
         }
+
+        if (mBatteryReceiverRegistered) {
+            unregisterReceiver(mBatteryReceiver);
+            mBatteryReceiverRegistered = false;
+        }
         super.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+        // 注册电池状态变化系统广播接收器
+        if (!mBatteryReceiverRegistered) {
+            registerReceiver(mBatteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            mBatteryReceiverRegistered = true;
+        }
+
         // Resume video playing
         if (mVideoView != null && !mIsHidden) {
             mVideoView.start();
@@ -480,6 +570,11 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
             mHandler = null;
         }
         mHideHandler.removeCallbacksAndMessages(null);
+
+        if (mBatteryReceiverRegistered) {
+            unregisterReceiver(mBatteryReceiver);
+            mBatteryReceiverRegistered = false;
+        }
         super.onDestroy();
     }
 
