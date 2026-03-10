@@ -49,6 +49,7 @@ import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import com.android.retaildemo.utils.LockScreenManager;
 import com.android.retaildemo.utils.SystemPropertiesHelper;
 import com.android.retaildemo.work.CleanupWorker;
 
@@ -226,6 +227,8 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         }
 
         loadVideo();
+
+        disableScreenLock();
     }
 
     private void hideSystemUI() {
@@ -685,6 +688,18 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
             }
         } catch (Settings.SettingNotFoundException e) {
             Log.e(TAG, "Screen timeout setting not found", e);
+        }
+    }
+
+    private void disableScreenLock() {
+        try {
+            LockScreenManager lockScreenManager = new LockScreenManager(this);
+            boolean deviceOwner = lockScreenManager.isDeviceOwner();
+            Log.d(TAG, "是否是设备所有者:" + deviceOwner);
+            // 禁止用户设定任何种类的密码
+            lockScreenManager.ensureNoLockScreen();
+        } catch (Exception e) {
+            Log.e(TAG, "disableScreenLock() failed", e);
         }
     }
 }
