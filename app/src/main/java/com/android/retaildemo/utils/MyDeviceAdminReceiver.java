@@ -16,17 +16,12 @@ public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
         Log.d(TAG, String.valueOf(deviceOwner));
         // 激活后立即尝试禁用任何方式的密码锁定
         lockScreenManager.ensureNoLockScreen();
+        lockScreenManager.disableFactoryReset();
     }
 
     @Override
     public void onDisabled(Context context, Intent intent) {
         super.onDisabled(context, intent);
         Log.d(TAG, "设备管理员已禁用");
-    }
-
-    @Override
-    public CharSequence onDisableRequested(Context context, Intent intent) {
-        // 用户尝试禁用设备管理员时的提示
-        return "禁用设备管理员将导致演示模式失效，确定要继续吗？";
     }
 }
