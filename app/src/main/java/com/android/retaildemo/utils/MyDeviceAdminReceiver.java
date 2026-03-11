@@ -16,6 +16,7 @@ public class MyDeviceAdminReceiver extends DeviceAdminReceiver {
         Log.d(TAG, String.valueOf(deviceOwner));
         // 激活后立即尝试禁用任何方式的密码锁定
         lockScreenManager.ensureNoLockScreen();
+        lockScreenManager.disableFactoryReset();
     }
 
     @Override
