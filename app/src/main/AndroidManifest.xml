@@ -17,6 +17,8 @@
     <!-- 允许应用写入/读取外部存储 -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.MOUNT_UNMOUNT_FILESYSTEMS" tools:ignore="ProtectedPermissions" />
 <!--    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />-->
     <!-- 允许应用收集其他应用的使用情况统计信息 -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
@@ -54,10 +56,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".HelloActivity"
-            android:exported="false" />
 
         <service
             android:name=".UserActivityMonitorService"

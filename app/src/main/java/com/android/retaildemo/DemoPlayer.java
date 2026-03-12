@@ -49,8 +49,8 @@ import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import com.android.retaildemo.startegy.CleanupManager;
 import com.android.retaildemo.utils.LockScreenManager;
-import com.android.retaildemo.utils.SystemPropertiesHelper;
 import com.android.retaildemo.work.CleanupWorker;
 
 import java.io.File;
@@ -167,13 +167,13 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
 
             // 取消每30分钟需执行的定时清理任务
             cancelPeriodicCleanup();
-            // 2. 关闭屏幕
+            // 清理线程池资源
+            CleanupManager.shutdownInstance();
+            // 关闭屏幕
             turnScreenOff();
-            // 3. 关闭当前Activity
+            // 关闭当前Activity
             finish();
         };
-        // 启动8小时计时器
-//        resetInactivityTimer();
         // 启动后台每30分钟的周期性清理任务
         schedulePeriodicCleanup();
 
@@ -281,10 +281,16 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
     }
 
     private void schedulePeriodicCleanup() {
-        PeriodicWorkRequest cleanupRequest = new PeriodicWorkRequest.Builder(CleanupWorker.class, 16, TimeUnit.MINUTES)
+        LockScreenManager lockScreenManager = new LockScreenManager(this);
+        boolean adminActive = lockScreenManager.isAdminActive();
+        if (!adminActive) {
+            Log.d(TAG, "应用需要获取设备所有者权限，以启动定时清理任务");
+            return;
+        }
+
+        PeriodicWorkRequest cleanupRequest = new PeriodicWorkRequest.Builder(CleanupWorker.class, 15, TimeUnit.MINUTES)
                 .addTag("cleanup-task")
                 .build();
-
         // 使用WorkManager调度任务
         WorkManager workManager = WorkManager.getInstance(this);
         // 如果存在具有相同唯一名称的待处理任务，则不执行任何操作。
@@ -462,6 +468,8 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         // 2. 启动后台监控Service
         startMonitorService();
 
+        cancelPeriodicCleanup();
+
         // 3. 退出到桌面
         Intent homeIntent = new Intent(Intent.ACTION_MAIN);
         homeIntent.addCategory(Intent.CATEGORY_HOME);
@@ -562,13 +570,6 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
 
     @Override
     protected void onDestroy() {
-        // 尝试启动监控服务
-//        try {
-//            Intent serviceIntent = new Intent(this, MonitorService.class);
-//            startService(serviceIntent);
-//        } catch (Exception e) {
-//            Log.e(TAG, "启动服务失败", e);
-//        }
         if (mSettingsObserver != null) {
             mSettingsObserver.unregister();
             mSettingsObserver = null;
