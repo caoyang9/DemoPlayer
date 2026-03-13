@@ -1,19 +1,24 @@
-# 1. 忽略 Gradle 的构建目录（这是核心！）
+# 1.Gradle构建产物
 /build
 */build
 app/build
-
-# 2. 忽略Gradle的缓存和包装器目录
 .gradle/
+gradle-app.setting
 
-# 3. 忽略IDE个人配置文件
+# 2.IDE个人配置
 .idea/
 *.iml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries
+.idea/vcs.xml
+.idea/jsLibraryMappings.xml
+.idea/modules.xml
+.idea/compiler.xml
+.idea/jarRepositories.xml
+.idea/misc.xml
 
-# 4. 忽略本地环境配置文件
+# 3.本地环境配置
 local.properties
-
-# 5. 忽略签名文件和安全配置
-*.jks
 *.keystore
-google-services.json
+*.jks
