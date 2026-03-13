@@ -47,6 +47,10 @@ public class LockScreenManager {
 
     private void setExtremePasswordPolicy() {
         try {
+//            mDpm.setKeyguardDisabledFeatures(mAdminName, DevicePolicyManager.KEYGUARD_DISABLE_FEATURES_ALL);
+//            mDpm.setKeyguardDisabledFeatures(mAdminName, DevicePolicyManager.KEYGUARD_DISABLE_BIOMETRICS);
+//            mDpm.setKeyguardDisabledFeatures(mAdminName, DevicePolicyManager.KEYGUARD_DISABLE_FACE);
+//            mDpm.setKeyguardDisabledFeatures(mAdminName, DevicePolicyManager.KEYGUARD_DISABLE_FINGERPRINT);
             // 设置一个几乎不可能手动输入的密码质量要求
             mDpm.setPasswordQuality(mAdminName, DevicePolicyManager.PASSWORD_QUALITY_COMPLEX);
             // 设置一个很长的最小密码长度
@@ -86,6 +90,7 @@ public class LockScreenManager {
             return;
         }
         try {
+//            mDpm.setKeyguardDisabledFeatures(mAdminName, DevicePolicyManager.KEYGUARD_DISABLE_FEATURES_NONE);
             mDpm.setPasswordQuality(mAdminName, DevicePolicyManager.PASSWORD_QUALITY_UNSPECIFIED);
             // 恢复字符要求
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

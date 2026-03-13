@@ -113,6 +113,9 @@ public class DemoModeActivity extends AppCompatActivity {
                 int demoModeEnabled = Settings.Global.getInt(getContentResolver(), DEMO_MODE_ENABLED, 0);
                 if (demoModeEnabled == 1) {
                     startDemoPlayerActivity();  // 立即开启
+                    // 禁用密码锁定和恢复出厂设置
+                    Log.d(TAG, "演示模式开启用户权限控制");
+                    disableScreenLockAndFactoryReset();
                 }
                 if (demoModeEnabled == 0) {
                     // 退出前台MonitorService服务
@@ -121,7 +124,7 @@ public class DemoModeActivity extends AppCompatActivity {
                     stopService(intent);
                     // 解除演示模式权限控制
                     Log.d(TAG, "解除演示模式权限控制");
-                    restore();
+                    restoreScreenLockAndFactoryReset();
                 }
                 String message = enable ? "正在播放演示内容" : "演示模式已关闭";
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
@@ -138,6 +141,20 @@ public class DemoModeActivity extends AppCompatActivity {
             Log.e(TAG, "设置失败", e);
             Toast.makeText(this, "设置失败", Toast.LENGTH_SHORT).show();
             restoreSwitchState();
+        }
+    }
+
+    private void disableScreenLockAndFactoryReset() {
+        try {
+            LockScreenManager lockScreenManager = new LockScreenManager(this);
+            boolean deviceOwner = lockScreenManager.isDeviceOwner();
+            Log.d(TAG, "是否是设备所有者:" + deviceOwner);
+            // 禁止用户设定任何种类的密码
+            lockScreenManager.ensureNoLockScreen();
+            // 禁止用户恢复出厂设置
+            lockScreenManager.disableFactoryReset();
+        } catch (Exception e) {
+            Log.e(TAG, "disableScreenLockAndFactoryReset() failed", e);
         }
     }
 
@@ -184,7 +201,7 @@ public class DemoModeActivity extends AppCompatActivity {
         }
     }
 
-    private void restore() {
+    private void restoreScreenLockAndFactoryReset() {
         try {
             LockScreenManager lockScreenManager = new LockScreenManager(this);
             // 接触演示模式用户权限控制
