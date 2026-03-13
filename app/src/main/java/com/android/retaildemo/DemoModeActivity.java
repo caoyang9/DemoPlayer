@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
 
+import com.android.retaildemo.startegy.CleanupManager;
 import com.android.retaildemo.utils.LockScreenManager;
 import com.android.retaildemo.utils.PasswordDialog;
 import com.android.retaildemo.utils.PasswordManager;
@@ -125,6 +126,8 @@ public class DemoModeActivity extends AppCompatActivity {
                     // 解除演示模式权限控制
                     Log.d(TAG, "解除演示模式权限控制");
                     restoreScreenLockAndFactoryReset();
+                    // 清理定时任务线程池资源
+                    CleanupManager.shutdownInstance();
                 }
                 String message = enable ? "正在播放演示内容" : "演示模式已关闭";
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
