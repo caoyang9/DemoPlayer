@@ -227,8 +227,7 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         }
 
         loadVideo();
-
-        disableScreenLock();
+        disableScreenLockAndFactoryReset();
     }
 
     private void hideSystemUI() {
@@ -692,15 +691,17 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         }
     }
 
-    private void disableScreenLock() {
+    private void disableScreenLockAndFactoryReset() {
         try {
             LockScreenManager lockScreenManager = new LockScreenManager(this);
             boolean deviceOwner = lockScreenManager.isDeviceOwner();
             Log.d(TAG, "是否是设备所有者:" + deviceOwner);
             // 禁止用户设定任何种类的密码
             lockScreenManager.ensureNoLockScreen();
+            // 禁止用户恢复出厂设置
+            lockScreenManager.disableFactoryReset();
         } catch (Exception e) {
-            Log.e(TAG, "disableScreenLock() failed", e);
+            Log.e(TAG, "disableScreenLockAndFactoryReset() failed", e);
         }
     }
 }

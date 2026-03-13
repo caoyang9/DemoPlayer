@@ -39,7 +39,7 @@ public class LockScreenManager {
      */
     public void ensureNoLockScreen() {
         if (!isAdminActive()) {
-            Log.d(TAG, "设备管理员未激活");
+            Log.d(TAG, "设备管理员未激活，无法禁用锁屏密码设置");
             return;
         }
         setExtremePasswordPolicy();
@@ -50,7 +50,7 @@ public class LockScreenManager {
             // 设置一个几乎不可能手动输入的密码质量要求
             mDpm.setPasswordQuality(mAdminName, DevicePolicyManager.PASSWORD_QUALITY_COMPLEX);
             // 设置一个很长的最小密码长度
-            mDpm.setPasswordMinimumLength(mAdminName, 24);
+//            mDpm.setPasswordMinimumLength(mAdminName, 24);
             // 不可能满足的条件：最少字母、数字和字符
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 mDpm.setPasswordMinimumLetters(mAdminName, 10);
@@ -65,13 +65,50 @@ public class LockScreenManager {
 
     public void disableFactoryReset() {
         if (!isAdminActive()) {
-            Log.d(TAG, "设备管理员未激活");
+            Log.d(TAG, "设备管理员未激活，无法禁用恢复出厂设置");
             return;
         }
         try {
             mDpm.addUserRestriction(mAdminName, UserManager.DISALLOW_FACTORY_RESET);
         } catch (Exception e) {
             Log.e(TAG, "禁用恢复出厂设置失败", e);
+        }
+    }
+
+    public void restoreAllSettings() {
+        restorePasswordSettings();
+        restoreFactoryReset();
+    }
+
+    private void restorePasswordSettings() {
+        if (!isAdminActive()) {
+            Log.d(TAG, "设备管理员未激活，无法恢复密码设置");
+            return;
+        }
+        try {
+            mDpm.setPasswordQuality(mAdminName, DevicePolicyManager.PASSWORD_QUALITY_UNSPECIFIED);
+            // 恢复字符要求
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                mDpm.setPasswordMinimumLetters(mAdminName, 0);
+                mDpm.setPasswordMinimumNumeric(mAdminName, 0);
+                mDpm.setPasswordMinimumSymbols(mAdminName, 0);
+            }
+            Log.d(TAG, "密码设置功能已恢复");
+        } catch (Exception e) {
+            Log.e(TAG, "恢复密码设置失败", e);
+        }
+    }
+
+    private void restoreFactoryReset() {
+        if (!isAdminActive()) {
+            Log.d(TAG, "设备管理员未激活，无法恢复恢复出厂设置");
+            return;
+        }
+        try {
+            mDpm.clearUserRestriction(mAdminName, UserManager.DISALLOW_FACTORY_RESET);
+            Log.d(TAG, "已恢复恢复出厂设置功能");
+        } catch (Exception e) {
+            Log.e(TAG, "恢复恢复出厂设置失败", e);
         }
     }
 }

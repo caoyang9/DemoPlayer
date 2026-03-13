@@ -1,5 +1,7 @@
 package com.android.retaildemo;
 
+import android.app.PendingIntent;
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -12,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
 
+import com.android.retaildemo.utils.LockScreenManager;
 import com.android.retaildemo.utils.PasswordDialog;
 import com.android.retaildemo.utils.PasswordManager;
 import com.google.android.material.card.MaterialCardView;
@@ -107,7 +110,20 @@ public class DemoModeActivity extends AppCompatActivity {
             boolean success = Settings.Global.putInt(getContentResolver(), DEMO_MODE_ENABLED, value);
 
             if (success) {
-                String message = enable ? "演示模式已开启" : "演示模式已关闭";
+                int demoModeEnabled = Settings.Global.getInt(getContentResolver(), DEMO_MODE_ENABLED, 0);
+                if (demoModeEnabled == 1) {
+                    startDemoPlayerActivity();  // 立即开启
+                }
+                if (demoModeEnabled == 0) {
+                    // 退出前台MonitorService服务
+                    Log.d(TAG, "退出MonitorService服务");
+                    Intent intent = new Intent(this, UserActivityMonitorService.class);
+                    stopService(intent);
+                    // 解除演示模式权限控制
+                    Log.d(TAG, "解除演示模式权限控制");
+                    restore();
+                }
+                String message = enable ? "正在播放演示内容" : "演示模式已关闭";
                 Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
                 Log.d(TAG, message);
             } else {
@@ -147,6 +163,35 @@ public class DemoModeActivity extends AppCompatActivity {
                         Toast.makeText(DemoModeActivity.this, "功能待开发", Toast.LENGTH_SHORT).show()
                 );
             }
+        }
+    }
+
+    private void startDemoPlayerActivity() {
+        try {
+            Intent intent = new Intent(this, DemoPlayer.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                    this,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+            pendingIntent.send();
+        } catch (PendingIntent.CanceledException e) {
+            Log.e("IdleMonitor", "启动失败", e);
+        }
+    }
+
+    private void restore() {
+        try {
+            LockScreenManager lockScreenManager = new LockScreenManager(this);
+            // 接触演示模式用户权限控制
+            lockScreenManager.restoreAllSettings();
+            Log.d("DemoMode", "已退出演示模式，功能已恢复");
+        } catch (Exception e) {
+            Log.e("DemoMode", "退出演示模式失败", e);
         }
     }
 
