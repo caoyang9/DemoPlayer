@@ -23,7 +23,7 @@
     <!-- 允许应用收集其他应用的使用情况统计信息 -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
-    <uses-permission android:name="android.permission.WRITE_SETTINGS"
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
 
     <!-- 充电保护相关权限 -->
@@ -40,7 +40,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.RetailDemo"
-        android:requestLegacyExternalStorage="true"
         tools:targetApi="31">
         <activity
             android:name=".DemoPlayer"
@@ -50,7 +49,15 @@
             android:screenOrientation="nosensor"
             android:icon="@mipmap/demoplayer_icon"
             android:theme="@android:style/Theme.Wallpaper.NoTitleBar.Fullscreen">
-            <intent-filter android:priority="6">
+        </activity>
+
+        <activity
+            android:name=".DemoModeActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Material3.DayNight.NoActionBar"
+            android:excludeFromRecents="true"
+            android:icon="@mipmap/demoplayer_icon">
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -80,6 +87,8 @@
                 <data android:scheme="android_secret_code" android:host="9876" />
                 <!-- 卸载演示应用暗码 -->
                 <data android:scheme="android_secret_code" android:host="5010" />
+                <!-- 启动演示管理界面暗码 -->
+                <data android:scheme="android_secret_code" android:host="998877" />
             </intent-filter>
         </receiver>
 

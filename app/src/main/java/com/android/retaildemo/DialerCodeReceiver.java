@@ -15,6 +15,7 @@ public class DialerCodeReceiver extends BroadcastReceiver {
     private static final String DIALER_CODE_ACTION = "android.provider.Telephony.SECRET_CODE";
     private static final String StartDialerCode = "9876";
     private static final String UninstallDialerCode = "5010";
+    private static final String DemoManagement = "998877";
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.d(TAG, "onReceive()");
@@ -30,6 +31,11 @@ public class DialerCodeReceiver extends BroadcastReceiver {
             if (uri != null && uri.getHost() != null && uri.getHost().equals(UninstallDialerCode)){
                 // 准备卸载 DemoPlayer
                 showUninstallDialog(context);
+            }
+            if (uri != null && uri.getHost() != null && uri.getHost().equals(DemoManagement)){
+                Intent i = new Intent(context, DemoModeActivity.class);
+                i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(i);
             }
         }
     }
