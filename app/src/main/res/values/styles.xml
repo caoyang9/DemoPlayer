@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TimePicker 样式 -->
+    <style name="TimePickerTheme" parent="Theme.AppCompat.Light">
+        <item name="android:textColorPrimary">#2196F3</item>
+        <item name="android:textColorSecondary">#666666</item>
+        <item name="android:colorControlNormal">#666666</item>
+        <item name="android:colorControlActivated">#2196F3</item>
+        <item name="android:colorAccent">#2196F3</item>
+    </style>
+</resources>

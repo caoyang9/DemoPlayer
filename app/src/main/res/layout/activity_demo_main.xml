@@ -7,10 +7,7 @@
     android:background="@android:color/white"
     android:padding="16dp">
 
-    <!-- 标题栏 -->
-
     <!-- 主开关 - 开启演示模式 -->
-
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -29,42 +26,37 @@
 
     </androidx.appcompat.widget.Toolbar>
 
-    <com.google.android.material.card.MaterialCardView
+    <!-- 启动演示模式 - 使用与播放时间段相同的结构，但带有灰色背景 -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        app:cardElevation="2dp"
-        app:cardCornerRadius="8dp"
-        style="@style/Widget.Material3.CardView.Filled">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#F5F5F5"
+        android:padding="16dp"
+        android:radius="8dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginEnd="16dp"
+            android:src="@android:drawable/ic_menu_view"
+            app:tint="@android:color/darker_gray" />
+
+        <TextView
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:padding="16dp"
-            android:gravity="center_vertical">
+            android:layout_weight="1"
+            android:text="启用演示模式"
+            android:textColor="@android:color/black"
+            android:textSize="16sp" />
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_view"
-                android:tint="@android:color/darker_gray"
-                android:layout_marginEnd="16dp" />
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="使用演示模式"
-                android:textSize="16sp"
-                android:textColor="@android:color/black" />
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/switch_demo_mode"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_demo_mode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
 
     <!-- 分隔线 -->
     <View
@@ -90,20 +82,75 @@
         android:layout_height="wrap_content"
         android:orientation="vertical" />
 
-    <!-- 添加默认占位功能行 -->
-    <include layout="@layout/item_feature_placeholder"
-        android:id="@+id/placeholder_1" />
-
-    <include layout="@layout/item_feature_placeholder"
-        android:id="@+id/placeholder_2" />
-
-    <include layout="@layout/item_feature_placeholder"
-        android:id="@+id/placeholder_3" />
-
-    <!-- 留白填充 -->
-    <Space
+    <!-- 第一行：时间显示和开关 -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp">
 
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_my_calendar"
+            android:layout_marginEnd="16dp"
+            app:tint="@android:color/darker_gray" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="播放时间段"
+            android:textSize="16sp"
+            android:textColor="@android:color/black" />
+
+        <TextView
+            android:id="@+id/tv_time_range"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="08:00 - 22:00"
+            android:textSize="14sp"
+            android:padding="8dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_time_control"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp" />
+    </LinearLayout>
+
+    <!-- 星期配置容器（可展开/收起） -->
+    <LinearLayout
+        android:id="@+id/week_config_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginTop="16dp"
+        android:visibility="gone">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="@android:color/darker_gray"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="生效星期"
+            android:textSize="14sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:id="@+id/week_days_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center" />
+    </LinearLayout>
 </LinearLayout>
