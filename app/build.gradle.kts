@@ -41,4 +41,5 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.work.runtime)
+    implementation(libs.gson)
 }

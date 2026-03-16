@@ -25,6 +25,9 @@
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
+    <!-- 精确定时任务权限声明-->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- 充电保护相关权限 -->
     <uses-permission android:name="android.permission.DEVICE_POWER" tools:ignore="ProtectedPermissions" />
@@ -69,6 +72,11 @@
             android:foregroundServiceType="specialUse"
             android:exported="false" />
 
+        <service
+            android:name=".time.TimeService"
+            android:foregroundServiceType="specialUse"
+            android:exported="false" />
+
         <!-- This isn't a real receiver, it's only used as a marker interface. -->
         <receiver android:name=".DemoModeCustomizationReceiver"
             android:exported="true">
@@ -105,6 +113,10 @@
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".time.AlarmReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>
