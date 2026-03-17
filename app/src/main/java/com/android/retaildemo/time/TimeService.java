@@ -16,6 +16,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.android.retaildemo.DemoPlayer;
+import com.android.retaildemo.UserActivityMonitorService;
 
 import java.util.Calendar;
 import java.util.List;
@@ -34,6 +35,17 @@ public class TimeService extends Service {
         configManager = new ConfigManager(this);
 
         startForegroundService();
+        startMonitorService();
+    }
+
+    private void startMonitorService() {
+        Intent intent = new Intent(this, UserActivityMonitorService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.d(TAG, "TimeService启动UserActivityMonitorService");
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
     }
 
     @Override
@@ -73,6 +85,8 @@ public class TimeService extends Service {
             setToDate(todayStart, now);
             setToDate(todayEnd, now);
 
+            boolean isCrossDay = todayEnd.before(todayStart); // 判断是否跨天
+
             // 如果结束时间小于开始时间（跨天），将结束时间加一天
             if (todayEnd.before(todayStart)) {
                 todayEnd.add(Calendar.DAY_OF_MONTH, 1);
@@ -82,32 +96,54 @@ public class TimeService extends Service {
 
             // 情况1：当前时间在开始时间之前
             if (nowMillis < todayStart.getTimeInMillis()) {
-                // 设置今天的开始闹钟
+                Log.d(TAG, "设置今天开始闹钟: " + todayStart.getTime());
                 setAlarm(todayStart, config.getStartTime(), "ACTION_START_DEMO");
-                Log.d(TAG, "今天还未开始，设置开始闹钟: " + todayStart.getTime());
+                if (isCrossDay) {
+                    Calendar tomorrowEnd = (Calendar) todayEnd.clone();
+                    tomorrowEnd.add(Calendar.DAY_OF_MONTH, 1);
+                    setAlarm(tomorrowEnd, config.getEndTime(), "ACTION_STOP_DEMO");
+                    Log.d(TAG, "跨天场景，设置结束闹钟在明天: " + tomorrowEnd.getTime());
+                } else {
+                    setAlarm(todayEnd, config.getEndTime(), "ACTION_STOP_DEMO");
+                    Log.d(TAG, "设置今天结束闹钟: " + todayEnd.getTime());
+                }
+            }
+            // 情况2：当前时间在开始时间和结束时间之间
+            boolean inTimeRange;
+            if (isCrossDay) {
+                // 跨天情况：当前时间 >= 今天开始时间 或 当前时间 <= 明天结束时间
+                Calendar tomorrowEnd = (Calendar) todayEnd.clone();
+                tomorrowEnd.add(Calendar.DAY_OF_MONTH, 1);
+                inTimeRange = nowMillis >= todayStart.getTimeInMillis() ||
+                        nowMillis <= tomorrowEnd.getTimeInMillis();
+            } else {
+                // 正常情况
+                inTimeRange = nowMillis >= todayStart.getTimeInMillis() &&
+                        nowMillis <= todayEnd.getTimeInMillis();
             }
 
-            // 情况2：当前时间在开始时间和结束时间之间
-            if (nowMillis >= todayStart.getTimeInMillis() && nowMillis <= todayEnd.getTimeInMillis()) {
-                // 立即启动演示（如果还没启动）
+            if (inTimeRange) {
                 if (!isDemoPlaying()) {
                     Log.d(TAG, "当前在播放时间段内，立即启动演示");
                     startDemoWithDelay();
                 }
-                // 设置今天的结束闹钟
-                setAlarm(todayEnd, config.getEndTime(), "ACTION_STOP_DEMO");
-                Log.d(TAG, "设置今天结束闹钟: " + todayEnd.getTime());
-            }
 
-            // 情况3：当前时间在结束时间之后（今天仍然有效，用于跨天情况）
-            if (nowMillis > todayEnd.getTimeInMillis() && todayEnd.after(todayStart)) {
-                // 今天的播放已经结束，不需要设置今天的闹钟
+                if (isCrossDay) {
+                    Calendar tomorrowEnd = (Calendar) todayEnd.clone();
+                    tomorrowEnd.add(Calendar.DAY_OF_MONTH, 1);
+                    setAlarm(tomorrowEnd, config.getEndTime(), "ACTION_STOP_DEMO");
+                    Log.d(TAG, "跨天场景，设置结束闹钟在明天: " + tomorrowEnd.getTime());
+                } else {
+                    setAlarm(todayEnd, config.getEndTime(), "ACTION_STOP_DEMO");
+                    Log.d(TAG, "设置今天结束闹钟: " + todayEnd.getTime());
+                }
+            }
+            // 情况3：当前时间在结束时间之后
+            if (!isCrossDay && nowMillis > todayEnd.getTimeInMillis()) {
                 Log.d(TAG, "今天的播放时段已结束");
             }
-        } else {
-            Log.d(TAG, "今天不在生效星期内");
         }
-
+        Log.d(TAG, "当前星期：" + config.getWeekDays());
         // 2. 为未来6天设置闹钟（从明天开始）
         for (int day = 1; day < 7; day++) {
             Calendar futureDate = Calendar.getInstance();
@@ -122,16 +158,21 @@ public class TimeService extends Service {
                 setToDate(startTime, futureDate);
                 setToDate(endTime, futureDate);
 
-                // 如果结束时间小于开始时间，将结束时间加一天
-                if (endTime.before(startTime)) {
-                    endTime.add(Calendar.DAY_OF_MONTH, 1);
-                }
-
+                // 设置开始闹钟
                 setAlarm(startTime, config.getStartTime(), "ACTION_START_DEMO");
-                setAlarm(endTime, config.getEndTime(), "ACTION_STOP_DEMO");
+                Log.d(TAG, "设置未来第" + day + "的天开始闹钟: " + startTime.getTime());
 
-                Log.d(TAG, "设置未来第" + day + "天闹钟: " +
-                        startTime.getTime() + " - " + endTime.getTime());
+                // 处理结束时间（考虑跨天）
+                if (endTime.before(startTime)) {
+                    // 如果结束时间小于开始时间，说明跨天，结束时间在第二天
+                    Calendar nextDayEnd = (Calendar) endTime.clone();
+                    nextDayEnd.add(Calendar.DAY_OF_MONTH, 1);
+                    setAlarm(nextDayEnd, config.getEndTime(), "ACTION_STOP_DEMO");
+                    Log.d(TAG, "跨天场景，设置未来" + day + "天结束闹钟在第二天: " + nextDayEnd.getTime());
+                } else {
+                    setAlarm(endTime, config.getEndTime(), "ACTION_STOP_DEMO");
+                    Log.d(TAG, "设置未来第" + day + "的天结束闹钟: " + endTime.getTime());
+                }
             }
         }
     }
