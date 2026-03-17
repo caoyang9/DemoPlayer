@@ -23,8 +23,10 @@ public class AppDataCleanupStrategy implements CleanupStrategy {
         String[] targetPackages = {
                 "com.android.dialer",        // 通话记录
                 "com.android.providers.contacts", // 联系人提供者
-//                "com.android.mms",           // 短信
-//                "com.android.chrome"         // 浏览器
+                "com.android.mms",           // 短信
+                "com.android.chrome",         // 浏览器
+                "com.google.android.apps.messaging",
+                "com.google.android.ims",   // RCS
         };
 
         DevicePolicyManager dpm = (DevicePolicyManager)
