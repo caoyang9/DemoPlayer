@@ -15,8 +15,15 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.provider.Settings;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
+
+import com.android.retaildemo.time.ConfigManager;
+import com.android.retaildemo.time.TimeConfig;
+
+import java.util.ArrayList;
+import java.util.Calendar;
 
 public class UserActivityMonitorService extends Service {
 
@@ -30,6 +37,9 @@ public class UserActivityMonitorService extends Service {
     private SharedPreferences prefs;
     private long lastTouchTime;
     private BroadcastReceiver userActivityReceiver;
+    private static final String DEMO_MODE_ENABLED = "sysui_demo_allowed";
+    private ConfigManager configManager;
+    private TimeConfig timeConfig;
 
     Runnable task = new Runnable() {
         @Override
@@ -57,6 +67,8 @@ public class UserActivityMonitorService extends Service {
 
         // 启动前台服务
         startForegroundService();
+
+        configManager = new ConfigManager(this);
 
         userActivityReceiver = new BroadcastReceiver() {
             @Override
@@ -144,11 +156,61 @@ public class UserActivityMonitorService extends Service {
      */
     private void sendRestartNotification() {
         Log.d(TAG, "sendRestartNotification()发送重启通知");
-        // 点亮屏幕
-        wakeUpAndUnlockScreen();
 
         // 直接启动DemoPlayer Activity
-        startDemoPlayerActivity();
+//        startDemoPlayerActivity();
+
+        // 当前为演示模式
+        int demoModeEnabled = Settings.Global.getInt(getContentResolver(), DEMO_MODE_ENABLED, 0);
+        if (demoModeEnabled == 1) {
+            // 未启用时间管理 || 在时间范围内时
+            Log.d(TAG, "演示模式状态：开启");
+            if (!configManager.getConfig().isEnabled() || isInTimeRange()) {
+                Log.d(TAG, "configManager.getConfig().isEnabled(): " + configManager.getConfig().isEnabled());
+                // 点亮屏幕
+                wakeUpAndUnlockScreen();
+                Log.d(TAG, "时钟配置未开启或开启且处于时间范围内");
+                startDemoPlayerActivity();
+            } else {
+                Log.d(TAG, "时钟配置开启，当前未处于有效时间范围内");
+                stopSelf();
+            }
+        }
+    }
+
+    private boolean isInTimeRange() {
+        Log.d(TAG, "======校验时间范围======");
+        Calendar now = Calendar.getInstance();
+        timeConfig= configManager.getConfig();
+        String[] start = timeConfig.getStartTime().split(":");
+        String[] end = timeConfig.getEndTime().split(":");
+
+        int currentWeekDay = getCurrentWeekDay();
+        ArrayList<Integer> selectedWeekDays = new ArrayList<>(timeConfig.getWeekDays());
+        Log.d(TAG, "选择星期：" + selectedWeekDays);
+        Log.d(TAG, "当前星期：" + currentWeekDay);
+        if (!selectedWeekDays.contains(currentWeekDay)) {
+            // 日期星期不处于生效时间段内
+            return false;
+        }
+
+        int currentMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE);
+        int startMinutes = Integer.parseInt(start[0]) * 60 + Integer.parseInt(start[1]);
+        int endMinutes = Integer.parseInt(end[0]) * 60 + Integer.parseInt(end[1]);
+
+        if (endMinutes < startMinutes) {
+            // 时间段跨天：12:00(T) - 06:00(T+1)
+            return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+        } else {
+            // 时间段处于当天：
+            return currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+        }
+    }
+
+    private int getCurrentWeekDay() {
+        Calendar cal = Calendar.getInstance();
+        int day = cal.get(Calendar.DAY_OF_WEEK);
+        return day == Calendar.SUNDAY ? 7 : day - 1;
     }
 
     /**
