@@ -79,6 +79,10 @@ public class UserActivityMonitorService extends Service {
                     // 定时启动演示应用
                     updateTouchTime(context);
                     startMonitoring();
+                    // 停止时钟管理Activity
+                    Intent stopDemoModeActivity = new Intent("STOP_DEMO_MODE_ACTIVITY");
+                    stopDemoModeActivity.setPackage(context.getPackageName());
+                    context.sendBroadcast(stopDemoModeActivity);
                 }
                 if (Intent.ACTION_SCREEN_ON.equals(action) ||
                         Intent.ACTION_USER_PRESENT.equals(action)) {

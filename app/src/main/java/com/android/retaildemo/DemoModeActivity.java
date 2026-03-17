@@ -554,7 +554,7 @@ public class DemoModeActivity extends AppCompatActivity {
             }
         };
 
-        IntentFilter filter = new IntentFilter("STOP_DEMO");
+        IntentFilter filter = new IntentFilter("STOP_DEMO_MODE_ACTIVITY");
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY); // 提高优先级
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
