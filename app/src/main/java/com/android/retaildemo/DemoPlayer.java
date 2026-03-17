@@ -69,9 +69,8 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
 
     private static final String TAG = "DemoPlayer";
     private static final boolean DEBUG = false;
-    // 达到阈值时间无交互，演示应用退出
-    private static final long INACTIVITY_TIMEOUT = 30 * 60 * 1000;
-//    private static final long INACTIVITY_TIMEOUT = 8 * 60 * 60 * 1000L;
+    // 达到阈值时间8小时无交互，演示应用退出
+    private static final long INACTIVITY_TIMEOUT = 8 * 60 * 60 * 1000L;
     private Runnable mInactivityRunnable;
 
     /**
@@ -100,6 +99,7 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
     private BroadcastReceiver mBatteryReceiver;
     private boolean mBatteryReceiverRegistered = false;
     private boolean mBatteryProtectFlag = false;
+    private BroadcastReceiver stopReceiver;
 
     private class BatteryReceiver extends BroadcastReceiver {
         @Override
@@ -155,6 +155,8 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
 
         mPowerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         mHandler = new Handler();
+
+        setupStopReceiver();
 
         // 初始化无交互后需执行任务
         mInactivityRunnable = () -> {
@@ -227,6 +229,36 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         }
 
         loadVideo();
+    }
+
+    private void setupStopReceiver() {
+        stopReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.d(TAG, "收到停止广播，准备关闭");
+
+                // 添加调试信息
+                Log.d(TAG, "Intent action: " + intent.getAction());
+                Log.d(TAG, "Intent flags: " + intent.getFlags());
+
+                runOnUiThread(() -> {
+                    if (!isFinishing()) {
+                        finish();
+                    }
+                });
+            }
+        };
+
+        IntentFilter filter = new IntentFilter("STOP_DEMO");
+        filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY); // 提高优先级
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(stopReceiver, filter, Context.RECEIVER_EXPORTED); // 临时改为 EXPORTED 测试
+        } else {
+            registerReceiver(stopReceiver, filter);
+        }
+
+        Log.d(TAG, "DemoPlayer停止广播接收器已注册");
     }
 
     private void hideSystemUI() {
@@ -581,6 +613,9 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         if (mBatteryReceiverRegistered) {
             unregisterReceiver(mBatteryReceiver);
             mBatteryReceiverRegistered = false;
+        }
+        if (stopReceiver != null) {
+            unregisterReceiver(stopReceiver);
         }
         super.onDestroy();
     }
