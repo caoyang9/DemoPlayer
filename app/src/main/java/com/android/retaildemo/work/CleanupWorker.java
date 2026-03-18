@@ -28,7 +28,7 @@ public class CleanupWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        Log.d(TAG, "开始执行每30分钟的清理任务");
+        Log.d(TAG, "开始执行清理任务");
 
         final Result[] workResult = {Result.success()};
         final CountDownLatch latch = new CountDownLatch(1);

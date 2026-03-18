@@ -95,13 +95,14 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
 
     private static final String PREFS_NAME = "demo_prefs";
     private static final String KEY_LAST_TOUCH = "last_touch_time";
-    private static final String CLEANUP_WORK_NAME = "periodic_cleanup_work";
+    private static final String CLEANUP_WORK_NAME = "unique_cleanup_work";
     private static final int POWER_LOWER = 30;  // 下限30%
     private static final int POWER_UPPER = 70;  // 上限70%
     private BroadcastReceiver mBatteryReceiver;
     private boolean mBatteryReceiverRegistered = false;
     private boolean mBatteryProtectFlag = false;
     private BroadcastReceiver stopReceiver;
+    private static final String SETTING_CLEAN_ENABLED = "clean_interval_enabled";
 
     private class BatteryReceiver extends BroadcastReceiver {
         @Override
@@ -178,8 +179,6 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
             // 关闭当前Activity
             finish();
         };
-        // 启动后台每30分钟的周期性清理任务
-        schedulePeriodicCleanup();
 
         // 获取预加载的视频资源文件名称
         final String preloadedFileName = getString(R.string.retail_demo_video_file_name);
@@ -596,6 +595,14 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         if (mVideoView != null && !mIsHidden) {
             mVideoView.start();
         }
+
+        // 启动后台每30分钟的周期性清理任务
+        int periodicCleanup = Settings.Global.getInt(getContentResolver(), SETTING_CLEAN_ENABLED, 0);
+        if (1 != periodicCleanup) {
+            Log.d(TAG, "周期清理任务未开启，启动演示应用播放时的清理任务");
+            schedulePeriodicCleanup();
+        }
+
         // 应用恢复时，重新启动计时器
         resetInactivityTimer();
     }

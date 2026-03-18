@@ -25,6 +25,12 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.appcompat.widget.Toolbar;
+import androidx.work.BackoffPolicy;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 import com.android.retaildemo.startegy.CleanupManager;
 import com.android.retaildemo.time.ConfigManager;
@@ -33,11 +39,13 @@ import com.android.retaildemo.time.TimeService;
 import com.android.retaildemo.utils.LockScreenManager;
 import com.android.retaildemo.utils.PasswordDialog;
 import com.android.retaildemo.utils.PasswordManager;
+import com.android.retaildemo.work.CleanupWorker;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 @RequiresApi(api = Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 public class DemoModeActivity extends AppCompatActivity {
@@ -68,7 +76,7 @@ public class DemoModeActivity extends AppCompatActivity {
     private boolean isSwitchChecked = false;  // 周期清理开关
     private static final String SETTING_CLEAN_ENABLED = "clean_interval_enabled";
     private static final String SETTING_CLEAN_INTERVAL = "clean_interval_minutes";
-
+    private static final String CLEANUP_WORK_NAME = "periodic_cleanup_work";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -592,6 +600,8 @@ public class DemoModeActivity extends AppCompatActivity {
         switchCleanInterval.setOnCheckedChangeListener((buttonView, isChecked) -> {
             // 开关状态变化时，写入Settings.Global
             Settings.Global.putInt(getContentResolver(), SETTING_CLEAN_ENABLED, isChecked ? 1 : 0);
+            int i = isChecked ? 1 : 0;
+            Log.d(TAG, "开关状态变化，新值：" + i);
 
             // 更新UI效果
             updateIntervalEnabledState();
@@ -696,15 +706,50 @@ public class DemoModeActivity extends AppCompatActivity {
     }
 
     private void startPeriodicClean(int minutes) {
-        // TODO: 启动周期性清理任务
-        System.out.println("启动周期清理，间隔：" + minutes + "分钟");
-
+        Log.d(TAG, "取消旧的周期清理任务");
+        cancelPeriodicCleanup();
+        System.out.println("启动周期清理间隔：" + minutes + "分钟的任务");
+        schedulePeriodicCleanup(minutes);
     }
 
     private void stopPeriodicClean() {
-        // TODO: 停止周期性清理任务
-        System.out.println("停止周期清理");
+        System.out.println("停止周期清理任务");
+        cancelPeriodicCleanup();
+    }
 
+    private void schedulePeriodicCleanup(int minutes) {
+        LockScreenManager lockScreenManager = new LockScreenManager(this);
+        boolean adminActive = lockScreenManager.isAdminActive();
+        if (!adminActive) {
+            Log.d(TAG, "应用需要获取设备所有者权限，以启动定时清理任务");
+            return;
+        }
+        if (minutes < 15) {
+            Log.w(TAG, "周期任务最小间隔为15分钟，输入的 " + minutes + " 分钟将被调整为15分钟");
+            minutes = 15;
+        }
+
+        // 创建周期任务
+        PeriodicWorkRequest cleanupRequest = new PeriodicWorkRequest.Builder(
+                CleanupWorker.class,
+                minutes, TimeUnit.MINUTES)
+                .addTag("cleanup-task")
+                .build();
+        // 使用WorkManager调度周期任务
+        WorkManager workManager = WorkManager.getInstance(this);
+        workManager.enqueueUniquePeriodicWork(
+                CLEANUP_WORK_NAME,
+                ExistingPeriodicWorkPolicy.KEEP,
+                cleanupRequest
+        );
+        Log.d(TAG, "周期清理任务已调度，间隔: " + minutes + " 分钟");
+    }
+
+    private void cancelPeriodicCleanup() {
+        WorkManager workManager = WorkManager.getInstance(this);
+        // 通过唯一任务名称取消任务
+        workManager.cancelUniqueWork(CLEANUP_WORK_NAME);
+        Log.d(TAG, "已取消周期性清理任务");
     }
 
     @Override
