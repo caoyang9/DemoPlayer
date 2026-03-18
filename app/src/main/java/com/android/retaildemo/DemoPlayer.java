@@ -596,7 +596,7 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
             mVideoView.start();
         }
 
-        // 启动后台每30分钟的周期性清理任务
+        // 启动一次性清理任务
         int periodicCleanup = Settings.Global.getInt(getContentResolver(), SETTING_CLEAN_ENABLED, 0);
         if (1 != periodicCleanup) {
             Log.d(TAG, "周期清理任务未开启，启动演示应用播放时的清理任务");

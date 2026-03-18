@@ -169,11 +169,14 @@
         <TextView
             android:id="@+id/tv_time_range"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="36dp"
             android:text="08:00 - 22:00"
             android:textSize="14sp"
-            android:padding="8dp"
-            android:background="?android:attr/selectableItemBackground"
+            android:textColor="#2196F3"
+            android:gravity="center"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:background="@drawable/interval_selector_bg"
             android:clickable="true"
             android:focusable="true" />
 
@@ -181,7 +184,7 @@
             android:id="@+id/switch_time_control"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp" />
+            android:layout_marginStart="16dp" />
     </LinearLayout>
 
     <!-- 星期配置容器（可展开/收起） -->
