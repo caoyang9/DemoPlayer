@@ -11,7 +11,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,19 +29,28 @@ public class CleanupManager {
         this.mStrategies = new ArrayList<>();
 
         // 创建线程池
-        int corePoolSize = Runtime.getRuntime().availableProcessors();
-        this.mExecutorService = Executors.newFixedThreadPool(corePoolSize);
-
+        int corePoolSize = Runtime.getRuntime().availableProcessors() / 3;
+        Log.d(TAG, "创建核心线程数： " + corePoolSize);
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                corePoolSize,  // 核心线程数
+                corePoolSize,  // 最大线程数
+                60L,       // 空闲线程存活时间
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>()
+        );
+        executor.allowCoreThreadTimeOut(true);
+        this.mExecutorService = executor;
         registerStrategies();
         Log.d(TAG, "CleanupManager 单例创建，线程池初始化");
     }
 
-
     // 获取单例
     public static CleanupManager getInstance(Context context) {
         if (instance == null) {
+            Log.d(TAG, "CleanupManager == null");
             synchronized (CleanupManager.class) {
                 if (instance == null) {
+                    Log.d(TAG, "创建新的CleanupManager实例");
                     instance = new CleanupManager(context.getApplicationContext());
                 }
             }
@@ -133,7 +143,7 @@ public class CleanupManager {
     /**
      * 关闭线程池
      */
-    public void shutdown() {
+    private void shutdown() {
         if (mExecutorService != null && !mExecutorService.isShutdown()) {
             mExecutorService.shutdown();
             try {

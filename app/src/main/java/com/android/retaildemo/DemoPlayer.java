@@ -46,6 +46,8 @@ import android.view.WindowManager;
 import android.widget.VideoView;
 
 import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
@@ -318,15 +320,15 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
             return;
         }
 
-        PeriodicWorkRequest cleanupRequest = new PeriodicWorkRequest.Builder(CleanupWorker.class, 15, TimeUnit.MINUTES)
+        OneTimeWorkRequest  cleanupRequest = new OneTimeWorkRequest.Builder(CleanupWorker.class)
                 .addTag("cleanup-task")
                 .build();
         // 使用WorkManager调度任务
         WorkManager workManager = WorkManager.getInstance(this);
         // 如果存在具有相同唯一名称的待处理任务，则不执行任何操作。
-        workManager.enqueueUniquePeriodicWork(
+        workManager.enqueueUniqueWork(
                 CLEANUP_WORK_NAME,
-                ExistingPeriodicWorkPolicy.KEEP,
+                ExistingWorkPolicy.KEEP,
                 cleanupRequest
         );
     }

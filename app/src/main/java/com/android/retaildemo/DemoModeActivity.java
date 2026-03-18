@@ -212,8 +212,8 @@ public class DemoModeActivity extends AppCompatActivity {
             weekConfigContainer.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             currentConfig.setEnabled(isChecked);
             configManager.saveConfig(currentConfig);
-
-            if (isChecked) {
+            int demoModeEnabled = Settings.Global.getInt(getContentResolver(), DEMO_MODE_ENABLED, 0);
+            if (demoModeEnabled == 1 && isChecked) {
                 // 启动TimeService用于定时启停演示应用播放
                 startTimeService();
                 // 判断当前是否处于生效时间段内
