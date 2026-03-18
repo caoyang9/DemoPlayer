@@ -82,6 +82,67 @@
         android:layout_height="wrap_content"
         android:orientation="vertical" />
 
+
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp"
+        android:background="@android:color/white">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/ic_menu_my_calendar"
+            android:layout_marginEnd="16dp"
+            app:tint="@android:color/darker_gray" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="周期清理时间"
+            android:textSize="15sp"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:layout_marginEnd="16dp"/>
+
+        <TextView
+            android:id="@+id/tv_clean_interval"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="30分钟"
+            android:textSize="14sp"
+            android:textColor="#2196F3"
+            android:gravity="center"
+            android:background="@drawable/interval_selector_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/>
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/switch_clean_interval"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0"/>
+
     <!-- 第一行：时间显示和开关 -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -153,64 +214,5 @@
             android:orientation="horizontal"
             android:gravity="center" />
     </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#E0E0E0"/>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="12dp"
-        android:background="#FFF9E6">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_my_calendar"
-            android:layout_marginEnd="16dp"
-            app:tint="@android:color/darker_gray" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="周期清理时间"
-            android:textSize="15sp"
-            android:textColor="#333333"
-            android:textStyle="bold"
-            android:layout_marginEnd="16dp"/>
-
-        <TextView
-            android:id="@+id/tv_clean_interval"
-            android:layout_width="0dp"
-            android:layout_height="36dp"
-            android:layout_weight="1"
-            android:text="30分钟"
-            android:textSize="14sp"
-            android:textColor="#2196F3"
-            android:gravity="center"
-            android:background="@drawable/interval_selector_bg"
-            android:clickable="true"
-            android:focusable="true"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"/>
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switch_clean_interval"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"/>
-    </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#E0E0E0"/>
 
 </LinearLayout>
