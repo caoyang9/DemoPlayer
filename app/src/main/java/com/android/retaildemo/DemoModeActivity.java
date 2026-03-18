@@ -58,7 +58,16 @@ public class DemoModeActivity extends AppCompatActivity {
     private final String[] weekNames = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
     private Handler handler = new Handler();
     private BroadcastReceiver stopReceiver;
-
+    private SwitchCompat switchCleanInterval;
+    private TextView tvCleanInterval;
+    private static final String[] INTERVAL_OPTIONS = {
+            "30分钟", "1小时", "2小时", "4小时", "8小时", "24小时"
+    };
+    private static final int[] INTERVAL_MINUTES = {30, 60, 120, 240, 480, 1440};
+    private String currentInterval = "30分钟";
+    private boolean isSwitchChecked = false;  // 周期清理开关
+    private static final String SETTING_CLEAN_ENABLED = "clean_interval_enabled";
+    private static final String SETTING_CLEAN_INTERVAL = "clean_interval_minutes";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -446,7 +455,6 @@ public class DemoModeActivity extends AppCompatActivity {
             if (success) {
                 int demoModeEnabled = Settings.Global.getInt(getContentResolver(), DEMO_MODE_ENABLED, 0);
                 if (demoModeEnabled == 1) {
-//                    startDemoPlayerActivity();  // 立即开启
                     if (switchTimeControl.isChecked() && isInTimeRange()) {
                         startDemoPlayerActivity();
                     }
@@ -465,6 +473,8 @@ public class DemoModeActivity extends AppCompatActivity {
                     // 清理定时任务线程池资源
                     CleanupManager.shutdownInstance();
                     stopTimeService(); // 关闭演示模式时也停止时间服务
+
+                    // 停止周期任务
                 }
             } else {
                 Toast.makeText(this, "设置失败，请检查权限", Toast.LENGTH_SHORT).show();
@@ -566,12 +576,145 @@ public class DemoModeActivity extends AppCompatActivity {
         Log.d(TAG, "DemoPlayer停止广播接收器已注册");
     }
 
+    private void initCleanInterval() {
+        switchCleanInterval = findViewById(R.id.switch_clean_interval);
+        tvCleanInterval = findViewById(R.id.tv_clean_interval);
+
+        // 从Settings.Global读取保存的值
+        loadSettings();
+
+        // 设置时间选择器点击事件（始终可以点击选择）
+        tvCleanInterval.setOnClickListener(v -> {
+            showIntervalDialog();
+        });
+
+        // 设置开关监听
+        switchCleanInterval.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            // 开关状态变化时，写入Settings.Global
+            Settings.Global.putInt(getContentResolver(), SETTING_CLEAN_ENABLED, isChecked ? 1 : 0);
+
+            // 更新UI效果
+            updateIntervalEnabledState();
+
+            // 开关状态变化时，触发周期清理任务的状态更新
+            onCleanIntervalChanged();
+        });
+
+        // 初始化状态
+        updateIntervalEnabledState();
+    }
+
+    private void loadSettings() {
+        try {
+            // 读取开关状态，默认关闭(0)
+            int enabled = Settings.Global.getInt(getContentResolver(), SETTING_CLEAN_ENABLED, 0);
+            switchCleanInterval.setChecked(enabled == 1);
+
+            // 读取时间值，默认30分钟
+            int minutes = Settings.Global.getInt(getContentResolver(), SETTING_CLEAN_INTERVAL, 30);
+
+            // 根据分钟值找到对应的显示文本
+            currentInterval = minutesToDisplayText(minutes);
+            tvCleanInterval.setText(currentInterval);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // 发生异常时使用默认值
+            switchCleanInterval.setChecked(false);
+            currentInterval = "30分钟";
+            tvCleanInterval.setText(currentInterval);
+        }
+    }
+
+    private String minutesToDisplayText(int minutes) {
+        for (int i = 0; i < INTERVAL_MINUTES.length; i++) {
+            if (INTERVAL_MINUTES[i] == minutes) {
+                return INTERVAL_OPTIONS[i];
+            }
+        }
+        return "30分钟"; // 默认
+    }
+
+    private void updateIntervalEnabledState() {
+        // 根据开关状态调整时间选择器的视觉效果
+        float alpha = switchCleanInterval.isChecked() ? 1.0f : 0.5f;
+        tvCleanInterval.setAlpha(alpha);
+    }
+
+    private void showIntervalDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("选择清理周期");
+
+        // 找到当前选中的项
+        int checkedItem = -1;
+        for (int i = 0; i < INTERVAL_OPTIONS.length; i++) {
+            if (INTERVAL_OPTIONS[i].equals(currentInterval)) {
+                checkedItem = i;
+                break;
+            }
+        }
+
+        builder.setSingleChoiceItems(INTERVAL_OPTIONS, checkedItem, (dialog, which) -> {
+            currentInterval = INTERVAL_OPTIONS[which];
+            tvCleanInterval.setText(currentInterval);
+
+            // 将选中的时间值写入Settings.Global
+            int minutes = INTERVAL_MINUTES[which];
+            Settings.Global.putInt(getContentResolver(), SETTING_CLEAN_INTERVAL, minutes);
+
+            // 如果开关是开启状态，立即生效
+            if (switchCleanInterval.isChecked()) {
+                onCleanIntervalChanged();
+            }
+
+            dialog.dismiss();
+        });
+
+        builder.setNegativeButton("取消", null);
+        builder.show();
+    }
+
+    private void onCleanIntervalChanged() {
+        if (switchCleanInterval.isChecked()) {
+            // 开关开启，获取选中的时间值
+            int minutes = getSelectedMinutes();
+            // 执行周期性清理任务
+            startPeriodicClean(minutes);
+        } else {
+            // 开关关闭，停止周期性清理
+            stopPeriodicClean();
+        }
+    }
+
+    private int getSelectedMinutes() {
+        for (int i = 0; i < INTERVAL_OPTIONS.length; i++) {
+            if (INTERVAL_OPTIONS[i].equals(currentInterval)) {
+                return INTERVAL_MINUTES[i];
+            }
+        }
+        return 30; // 默认30分钟
+    }
+
+    private void startPeriodicClean(int minutes) {
+        // TODO: 启动周期性清理任务
+        System.out.println("启动周期清理，间隔：" + minutes + "分钟");
+
+    }
+
+    private void stopPeriodicClean() {
+        // TODO: 停止周期性清理任务
+        System.out.println("停止周期清理");
+
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         if (!isUserAction) {
             loadCurrentDemoModeState();
         }
+        // 初始化周期清理任务时间选择组件
+        initCleanInterval();
     }
 
     @Override
