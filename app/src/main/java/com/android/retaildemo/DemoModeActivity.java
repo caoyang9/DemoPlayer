@@ -1,5 +1,6 @@
 package com.android.retaildemo;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.app.admin.DevicePolicyManager;
@@ -9,6 +10,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.os.Build;
 import android.os.Bundle;
@@ -82,6 +84,8 @@ public class DemoModeActivity extends AppCompatActivity {
     private static final String SETTING_CLEAN_INTERVAL = "clean_interval_minutes";
     private static final String CLEANUP_WORK_NAME = "periodic_cleanup_work";
     private static final int REQUEST_CODE_ENABLE_ADMIN = 100; // 请求码
+    private static final int REQUEST_CODE_CALL_LOG = 101;
+    private static final int REQUEST_CODE_SMS = 102;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -808,17 +812,59 @@ public class DemoModeActivity extends AppCompatActivity {
         Log.d(TAG, "设备管理员权限状态: " + (isAdminActive ? "已激活" : "未激活"));
 
         if (!isAdminActive) {
-            // 构建激活 Intent
             Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
             intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent);
-            // 可选的提示文字，在激活界面展示给用户
             intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,
                     "授予该权限使以清理设备中的数据。");
             // 启动系统授权界面
             startActivityForResult(intent, REQUEST_CODE_ENABLE_ADMIN);
         } else {
-            if (switchTimeControl.isChecked() && isInTimeRange()) {
-                startDemoPlayerActivity();
+            checkAndRequestCallLogPermission();
+        }
+    }
+
+    private void checkAndRequestCallLogPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            int readPermission = checkSelfPermission(Manifest.permission.READ_CALL_LOG);
+            int writePermission = checkSelfPermission(Manifest.permission.WRITE_CALL_LOG);
+            int readContacts = checkSelfPermission(Manifest.permission.READ_CONTACTS);
+            int writeContacts = checkSelfPermission(Manifest.permission.WRITE_CONTACTS);
+            if (readPermission != PackageManager.PERMISSION_GRANTED ||
+                    writePermission != PackageManager.PERMISSION_GRANTED ||
+                    readContacts != PackageManager.PERMISSION_GRANTED ||
+                    writeContacts != PackageManager.PERMISSION_GRANTED
+            ) {
+
+                Log.d(TAG, "申请通话记录权限");
+                if (shouldShowRequestPermissionRationale(Manifest.permission.READ_CALL_LOG)) {
+                    // 用户之前拒绝过，显示说明
+                    new AlertDialog.Builder(this)
+                            .setTitle("需要通话记录权限")
+                            .setMessage("为了清理通话记录，需要您授予通话记录相关权限")
+                            .setPositiveButton("去授权", (dialog, which) -> {
+                                requestPermissions(new String[]{
+                                        Manifest.permission.READ_CALL_LOG,
+                                        Manifest.permission.WRITE_CALL_LOG,
+                                        Manifest.permission.READ_CONTACTS,
+                                        Manifest.permission.WRITE_CONTACTS
+                                }, REQUEST_CODE_CALL_LOG);
+                            })
+                            .setNegativeButton("取消", null)
+                            .show();
+                } else {
+                    // 直接申请
+                    requestPermissions(new String[]{
+                            Manifest.permission.READ_CALL_LOG,
+                            Manifest.permission.WRITE_CALL_LOG,
+                            Manifest.permission.READ_CONTACTS,
+                            Manifest.permission.WRITE_CONTACTS
+                    }, REQUEST_CODE_CALL_LOG);
+                }
+            } else {
+                Log.d(TAG, "已有通话权限");
+                if (switchTimeControl.isChecked() && isInTimeRange()) {
+                    startDemoPlayerActivity();
+                }
             }
         }
     }
@@ -829,9 +875,7 @@ public class DemoModeActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_ENABLE_ADMIN) {
             if (resultCode == RESULT_OK) {
                 Log.d(TAG, "用户已授予应用设备管理员权限");
-                if (switchTimeControl.isChecked() && isInTimeRange()) {
-                    startDemoPlayerActivity();
-                }
+                checkAndRequestCallLogPermission();
             } else {
                 Log.w(TAG, "用户取消授予应用设备管理员权限");
                 // 用户拒绝激活，可以给出提示，或重试
