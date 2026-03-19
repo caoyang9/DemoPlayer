@@ -179,6 +179,9 @@ public class UserActivityMonitorService extends Service {
                 Log.d(TAG, "时钟配置开启，当前未处于有效时间范围内");
                 stopSelf();
             }
+        } else {
+            Log.d(TAG, "演示模式未开启");
+            stopSelf();
         }
     }
 

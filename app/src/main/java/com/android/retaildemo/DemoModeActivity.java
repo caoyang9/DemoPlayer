@@ -2,8 +2,11 @@ package com.android.retaildemo;
 
 import android.app.AlertDialog;
 import android.app.PendingIntent;
+import android.app.admin.DevicePolicyManager;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.ColorStateList;
@@ -37,6 +40,7 @@ import com.android.retaildemo.time.ConfigManager;
 import com.android.retaildemo.time.TimeConfig;
 import com.android.retaildemo.time.TimeService;
 import com.android.retaildemo.utils.LockScreenManager;
+import com.android.retaildemo.utils.MyDeviceAdminReceiver;
 import com.android.retaildemo.utils.PasswordDialog;
 import com.android.retaildemo.utils.PasswordManager;
 import com.android.retaildemo.work.CleanupWorker;
@@ -77,6 +81,7 @@ public class DemoModeActivity extends AppCompatActivity {
     private static final String SETTING_CLEAN_ENABLED = "clean_interval_enabled";
     private static final String SETTING_CLEAN_INTERVAL = "clean_interval_minutes";
     private static final String CLEANUP_WORK_NAME = "periodic_cleanup_work";
+    private static final int REQUEST_CODE_ENABLE_ADMIN = 100; // 请求码
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -463,14 +468,25 @@ public class DemoModeActivity extends AppCompatActivity {
             if (success) {
                 int demoModeEnabled = Settings.Global.getInt(getContentResolver(), DEMO_MODE_ENABLED, 0);
                 if (demoModeEnabled == 1) {
-                    if (switchTimeControl.isChecked() && isInTimeRange()) {
-                        startDemoPlayerActivity();
-                    }
+                    // 检查并申请设备管理员权限
+                    checkAndRequestAdminPermission();
                     // 禁用密码锁定和恢复出厂设置
                     Log.d(TAG, "演示模式开启用户权限控制");
-                    disableScreenLockAndFactoryReset();
+
+                    // TODO 禁用密码设置 禁止恢复出厂设置
+                    // 设备管理员权限无法实现，需要设备所有者权限
+//                    disableScreenLockAndFactoryReset();
                 }
                 if (demoModeEnabled == 0) {
+                    if (switchCleanInterval != null) {
+                        switchCleanInterval.setChecked(false);
+                        updateIntervalEnabledState();
+                        Settings.Global.putInt(getContentResolver(), SETTING_CLEAN_ENABLED, 0);
+                        // 停止周期清理任务
+                        stopPeriodicClean();
+                        Log.d(TAG, "演示模式关闭，自动关闭周期清理");
+                    }
+
                     // 退出前台MonitorService服务
                     Log.d(TAG, "退出MonitorService服务");
                     Intent intent = new Intent(this, UserActivityMonitorService.class);
@@ -483,6 +499,9 @@ public class DemoModeActivity extends AppCompatActivity {
                     stopTimeService(); // 关闭演示模式时也停止时间服务
 
                     // 停止周期任务
+                    cancelPeriodicCleanup();
+                    // 释放演示应用的设备所有者权限
+                    releaseDeviceAdminPermission();
                 }
             } else {
                 Toast.makeText(this, "设置失败，请检查权限", Toast.LENGTH_SHORT).show();
@@ -499,6 +518,17 @@ public class DemoModeActivity extends AppCompatActivity {
         }
     }
 
+    public void releaseDeviceAdminPermission() {
+        DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
+        ComponentName adminComponent = new ComponentName(this, MyDeviceAdminReceiver.class);
+
+        try {
+            dpm.removeActiveAdmin(adminComponent);
+            Log.i("DemoMode", "设备管理员权限已成功移除");
+        } catch (SecurityException e) {
+            Log.e("DemoMode", "移除失败: " + e.getMessage());
+        }
+    }
     private void disableScreenLockAndFactoryReset() {
         try {
             LockScreenManager lockScreenManager = new LockScreenManager(this);
@@ -686,6 +716,25 @@ public class DemoModeActivity extends AppCompatActivity {
 
     private void onCleanIntervalChanged() {
         if (switchCleanInterval.isChecked()) {
+            // 判断演示模式是否开启
+            int currentValue = Settings.Global.getInt(getContentResolver(), DEMO_MODE_ENABLED, 0);
+            if (currentValue == 0) {
+                Log.d(TAG, "演示模式未开启");
+                switchCleanInterval.setChecked(false);
+                updateIntervalEnabledState();
+                new AlertDialog.Builder(this)
+                        .setTitle("提示")
+                        .setMessage("演示模式未开启，请先启用演示模式后再使用此功能。")
+                        .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .setCancelable(true)
+                        .show();
+                return;
+            }
             // 开关开启，获取选中的时间值
             int minutes = getSelectedMinutes();
             // 执行周期性清理任务
@@ -721,7 +770,7 @@ public class DemoModeActivity extends AppCompatActivity {
         LockScreenManager lockScreenManager = new LockScreenManager(this);
         boolean adminActive = lockScreenManager.isAdminActive();
         if (!adminActive) {
-            Log.d(TAG, "应用需要获取设备所有者权限，以启动定时清理任务");
+            Log.d(TAG, "应用需要获取设备管理员权限，以启动定时清理任务");
             return;
         }
         if (minutes < 15) {
@@ -750,6 +799,45 @@ public class DemoModeActivity extends AppCompatActivity {
         // 通过唯一任务名称取消任务
         workManager.cancelUniqueWork(CLEANUP_WORK_NAME);
         Log.d(TAG, "已取消周期性清理任务");
+    }
+
+    private void checkAndRequestAdminPermission() {
+        DevicePolicyManager dpm = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);
+        ComponentName adminComponent = new ComponentName(this, MyDeviceAdminReceiver.class);
+        boolean isAdminActive = dpm.isAdminActive(adminComponent);
+        Log.d(TAG, "设备管理员权限状态: " + (isAdminActive ? "已激活" : "未激活"));
+
+        if (!isAdminActive) {
+            // 构建激活 Intent
+            Intent intent = new Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN);
+            intent.putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, adminComponent);
+            // 可选的提示文字，在激活界面展示给用户
+            intent.putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                    "授予该权限使以清理设备中的数据。");
+            // 启动系统授权界面
+            startActivityForResult(intent, REQUEST_CODE_ENABLE_ADMIN);
+        } else {
+            if (switchTimeControl.isChecked() && isInTimeRange()) {
+                startDemoPlayerActivity();
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_ENABLE_ADMIN) {
+            if (resultCode == RESULT_OK) {
+                Log.d(TAG, "用户已授予应用设备管理员权限");
+                if (switchTimeControl.isChecked() && isInTimeRange()) {
+                    startDemoPlayerActivity();
+                }
+            } else {
+                Log.w(TAG, "用户取消授予应用设备管理员权限");
+                // 用户拒绝激活，可以给出提示，或重试
+                Toast.makeText(this, "需要设备管理员权限才能自动清理数据", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     @Override

@@ -15,6 +15,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * 需要设备所有者权限
+ */
 public class AppDataCleanupStrategy implements CleanupStrategy {
     private static final String TAG = "AppDataCleanupStrategy";
     @Override

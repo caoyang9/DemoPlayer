@@ -315,7 +315,7 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
         LockScreenManager lockScreenManager = new LockScreenManager(this);
         boolean adminActive = lockScreenManager.isAdminActive();
         if (!adminActive) {
-            Log.d(TAG, "应用需要获取设备所有者权限，以启动定时清理任务");
+            Log.d(TAG, "应用需要获取设备管理员权限，以启动定时清理任务");
             return;
         }
 
