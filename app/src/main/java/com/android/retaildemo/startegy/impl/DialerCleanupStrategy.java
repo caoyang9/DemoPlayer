@@ -24,8 +24,6 @@ public class DialerCleanupStrategy implements CleanupStrategy {
 
     @Override
     public void cleanup(Context context, CleanupCallback callback) {
-        Log.d(TAG, "开始暴力清理拨号器数据");
-
         ContentResolver resolver = context.getContentResolver();
         int totalDeleted = 0;
         // 1. 删通话记录

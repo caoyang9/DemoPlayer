@@ -6,6 +6,8 @@ import android.util.Log;
 import com.android.retaildemo.startegy.impl.AppDataCleanupStrategy;
 import com.android.retaildemo.startegy.impl.DialerCleanupStrategy;
 import com.android.retaildemo.startegy.impl.PhotoCleanupStrategy;
+import com.android.retaildemo.startegy.impl.SmsCleanupByclearApplicationUserDataStrategy;
+import com.android.retaildemo.startegy.impl.SmsCleanupStrategy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,15 +62,12 @@ public class CleanupManager {
     }
 
     private void registerStrategies() {
-        // 按优先级注册（数值越小优先级越高）
 //        mStrategies.add(new WebViewHistoryStrategy());      // 优先级 1
         mStrategies.add(new PhotoCleanupStrategy());        // 优先级 2
 //        mStrategies.add(new AppDataCleanupStrategy());
         mStrategies.add(new DialerCleanupStrategy());
-//        mStrategies.add(new CallLogCleanupStrategy());      // 优先级 3
-//        mStrategies.add(new SmsCleanupStrategy());          // 优先级 4
-//        mStrategies.add(new AccountCleanupStrategy());      // 优先级 5
-        // 可以继续添加其他策略
+        mStrategies.add(new SmsCleanupStrategy());
+//        mStrategies.add(new SmsCleanupByclearApplicationUserDataStrategy());
 
         // 按优先级排序
         Collections.sort(mStrategies,

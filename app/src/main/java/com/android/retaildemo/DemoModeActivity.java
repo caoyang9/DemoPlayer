@@ -16,6 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
+import android.provider.Telephony;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -85,7 +86,7 @@ public class DemoModeActivity extends AppCompatActivity {
     private static final String CLEANUP_WORK_NAME = "periodic_cleanup_work";
     private static final int REQUEST_CODE_ENABLE_ADMIN = 100; // 请求码
     private static final int REQUEST_CODE_CALL_LOG = 101;
-    private static final int REQUEST_CODE_SMS = 102;
+    private static final int REQUEST_CODE_DEFAULT_SMS = 102;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -829,10 +830,12 @@ public class DemoModeActivity extends AppCompatActivity {
             int writePermission = checkSelfPermission(Manifest.permission.WRITE_CALL_LOG);
             int readContacts = checkSelfPermission(Manifest.permission.READ_CONTACTS);
             int writeContacts = checkSelfPermission(Manifest.permission.WRITE_CONTACTS);
+            int readSms = checkSelfPermission(Manifest.permission.READ_SMS);
             if (readPermission != PackageManager.PERMISSION_GRANTED ||
                     writePermission != PackageManager.PERMISSION_GRANTED ||
                     readContacts != PackageManager.PERMISSION_GRANTED ||
-                    writeContacts != PackageManager.PERMISSION_GRANTED
+                    writeContacts != PackageManager.PERMISSION_GRANTED ||
+                    readSms != PackageManager.PERMISSION_GRANTED
             ) {
 
                 Log.d(TAG, "申请通话记录权限");
@@ -846,7 +849,8 @@ public class DemoModeActivity extends AppCompatActivity {
                                         Manifest.permission.READ_CALL_LOG,
                                         Manifest.permission.WRITE_CALL_LOG,
                                         Manifest.permission.READ_CONTACTS,
-                                        Manifest.permission.WRITE_CONTACTS
+                                        Manifest.permission.WRITE_CONTACTS,
+                                        Manifest.permission.READ_SMS
                                 }, REQUEST_CODE_CALL_LOG);
                             })
                             .setNegativeButton("取消", null)
@@ -857,7 +861,8 @@ public class DemoModeActivity extends AppCompatActivity {
                             Manifest.permission.READ_CALL_LOG,
                             Manifest.permission.WRITE_CALL_LOG,
                             Manifest.permission.READ_CONTACTS,
-                            Manifest.permission.WRITE_CONTACTS
+                            Manifest.permission.WRITE_CONTACTS,
+                            Manifest.permission.READ_SMS
                     }, REQUEST_CODE_CALL_LOG);
                 }
             } else {
