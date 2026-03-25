@@ -1,6 +1,7 @@
 package com.android.retaildemo;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.app.admin.DevicePolicyManager;
@@ -589,6 +590,7 @@ public class DemoModeActivity extends AppCompatActivity {
         }
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private void setupStopReceiver() {
         stopReceiver = new BroadcastReceiver() {
             @Override

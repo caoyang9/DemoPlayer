@@ -14,7 +14,7 @@ public class PhotoCleanupStrategy implements CleanupStrategy {
     static final String CAMERA_PATH = Environment.getExternalStoragePublicDirectory(
             Environment.DIRECTORY_DCIM).getAbsolutePath() + "/Camera/";
     static final String SCREENSHOTS_PATH = Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/Screenshots/";
+            Environment.DIRECTORY_PICTURES).getAbsolutePath();
 
     @Override
     public void cleanup(Context context, CleanupCallback callback) {

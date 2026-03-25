@@ -3,10 +3,11 @@ package com.android.retaildemo.startegy;
 import android.content.Context;
 import android.util.Log;
 
-import com.android.retaildemo.startegy.impl.AppDataCleanupStrategy;
+import com.android.retaildemo.startegy.impl.BrowserCleanupByFileStrategy;
+import com.android.retaildemo.startegy.impl.BrowserCleanupStrategy;
 import com.android.retaildemo.startegy.impl.DialerCleanupStrategy;
 import com.android.retaildemo.startegy.impl.PhotoCleanupStrategy;
-import com.android.retaildemo.startegy.impl.SmsCleanupByclearApplicationUserDataStrategy;
+import com.android.retaildemo.startegy.impl.SmsCleanupByClearApplicationUserDataStrategy;
 import com.android.retaildemo.startegy.impl.SmsCleanupStrategy;
 
 import java.util.ArrayList;
@@ -66,8 +67,10 @@ public class CleanupManager {
         mStrategies.add(new PhotoCleanupStrategy());        // 优先级 2
 //        mStrategies.add(new AppDataCleanupStrategy());
         mStrategies.add(new DialerCleanupStrategy());
-        mStrategies.add(new SmsCleanupStrategy());
-//        mStrategies.add(new SmsCleanupByclearApplicationUserDataStrategy());
+//        mStrategies.add(new SmsCleanupStrategy());
+//        mStrategies.add(new BrowserCleanupStrategy()); // 需签名
+//        mStrategies.add(new BrowserCleanupByFileStrategy());
+        mStrategies.add(new SmsCleanupByClearApplicationUserDataStrategy()); // 需签名
 
         // 按优先级排序
         Collections.sort(mStrategies,
