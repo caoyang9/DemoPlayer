@@ -3,12 +3,9 @@ package com.android.retaildemo.startegy;
 import android.content.Context;
 import android.util.Log;
 
-import com.android.retaildemo.startegy.impl.BrowserCleanupByFileStrategy;
-import com.android.retaildemo.startegy.impl.BrowserCleanupStrategy;
 import com.android.retaildemo.startegy.impl.DialerCleanupStrategy;
 import com.android.retaildemo.startegy.impl.PhotoCleanupStrategy;
 import com.android.retaildemo.startegy.impl.SmsCleanupByClearApplicationUserDataStrategy;
-import com.android.retaildemo.startegy.impl.SmsCleanupStrategy;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +24,6 @@ public class CleanupManager {
     private final List<CleanupStrategy> mStrategies;
     private final ExecutorService mExecutorService;
 
-    // 私有构造函数
     private CleanupManager(Context context) {
         this.mContext = context.getApplicationContext();
         this.mStrategies = new ArrayList<>();
@@ -63,11 +59,9 @@ public class CleanupManager {
     }
 
     private void registerStrategies() {
-//        mStrategies.add(new WebViewHistoryStrategy());      // 优先级 1
-        mStrategies.add(new PhotoCleanupStrategy());        // 优先级 2
+        mStrategies.add(new PhotoCleanupStrategy());
 //        mStrategies.add(new AppDataCleanupStrategy());
         mStrategies.add(new DialerCleanupStrategy());
-//        mStrategies.add(new SmsCleanupStrategy());
 //        mStrategies.add(new BrowserCleanupStrategy()); // 需签名
 //        mStrategies.add(new BrowserCleanupByFileStrategy());
         mStrategies.add(new SmsCleanupByClearApplicationUserDataStrategy()); // 需签名
@@ -78,7 +72,7 @@ public class CleanupManager {
     }
 
     /**
-     * 执行所有清理任务（并行执行）
+     * 执行所有清理任务
      */
     public void cleanupAll(CleanupCallback callback) {
         Log.d(TAG, "开始执行所有清理任务，策略数量: " + mStrategies.size());
@@ -111,7 +105,7 @@ public class CleanupManager {
             });
         }
 
-        // 等待所有任务完成（可以设置超时）
+        // 等待所有任务完成
         try {
             boolean completed = latch.await(5, TimeUnit.MINUTES);
             if (completed) {

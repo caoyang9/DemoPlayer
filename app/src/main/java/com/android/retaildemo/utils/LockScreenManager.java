@@ -51,7 +51,7 @@ public class LockScreenManager {
 //            mDpm.setKeyguardDisabledFeatures(mAdminName, DevicePolicyManager.KEYGUARD_DISABLE_BIOMETRICS);
 //            mDpm.setKeyguardDisabledFeatures(mAdminName, DevicePolicyManager.KEYGUARD_DISABLE_FACE);
 //            mDpm.setKeyguardDisabledFeatures(mAdminName, DevicePolicyManager.KEYGUARD_DISABLE_FINGERPRINT);
-            // 设置一个几乎不可能手动输入的密码质量要求
+            // 设置不可能手动输入的密码质量要求
             mDpm.setPasswordQuality(mAdminName, DevicePolicyManager.PASSWORD_QUALITY_COMPLEX);
             // 设置一个很长的最小密码长度
 //            mDpm.setPasswordMinimumLength(mAdminName, 24);

@@ -18,6 +18,7 @@ public class SmsCleanupByClearApplicationUserDataStrategy implements CleanupStra
     private static final String TAG = "SmsCleanupStrategy";
 //    private static final String SMS_PACKAGE = "com.google.android.apps.messaging"; // tcl
     private static final String SMS_PACKAGE = "com.android.messaging";
+    private static final String CHROME_PACKAGE = "com.android.chrome";
 
     @Override
     public String getStrategyName() {
@@ -49,6 +50,37 @@ public class SmsCleanupByClearApplicationUserDataStrategy implements CleanupStra
                     }
                 } else {
                     Log.w(TAG, "短信清理失败");
+                    if (callback != null) {
+                        callback.onError(getStrategyName(), "清理失败");
+                    }
+                }
+
+            } catch (Exception e) {
+                Log.e(TAG, "清理异常", e);
+                if (callback != null) {
+                    callback.onError(getStrategyName(), e.getMessage());
+                }
+            }
+        }).start();
+
+        new Thread(() -> {
+            try {
+                Log.i(TAG, "开始清理浏览器数据: " + CHROME_PACKAGE);
+
+                // 强制停止目标应用
+                forceStopPackage(context, CHROME_PACKAGE);
+                Thread.sleep(500); // 等待进程停止
+
+                // 清除应用数据
+                boolean success = clearApplicationUserData(context, CHROME_PACKAGE);
+
+                if (success) {
+                    Log.i(TAG, "浏览器数据清理成功");
+                    if (callback != null) {
+                        callback.onComplete(getStrategyName(), true);
+                    }
+                } else {
+                    Log.w(TAG, "浏览器数据清理失败");
                     if (callback != null) {
                         callback.onError(getStrategyName(), "清理失败");
                     }
