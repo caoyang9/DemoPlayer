@@ -414,6 +414,7 @@ public class DemoPlayer extends Activity implements DownloadVideoTask.ResultList
             }
             return;
         }
+        Log.d(TAG, "DownloadVideoTask");
         new DownloadVideoTask(this, mDownloadPath, mPreloadedVideoFile, this).run();
     }
 

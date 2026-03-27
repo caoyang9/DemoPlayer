@@ -26,6 +26,7 @@ import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -46,7 +47,7 @@ import java.net.URL;
  */
 class DownloadVideoTask {
     private static final String TAG = "DownloadVideoTask";
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
 
     static final int MSG_CHECK_FOR_UPDATE = 1;
     static final int MSG_DOWNLOAD_COMPLETE = 2;
@@ -91,8 +92,18 @@ class DownloadVideoTask {
 
     public void run() {
         mDownloadReceiver = new DownloadResultReceiver();
-        mContext.registerReceiver(mDownloadReceiver,
-                new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE));
+        // 注册广播，用于演示资源下载完成后回调
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            mContext.registerReceiver(
+                    mDownloadReceiver,
+                    new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+                    Context.RECEIVER_EXPORTED);
+        } else {
+            mContext.registerReceiver(
+                    mDownloadReceiver,
+                    new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
+                    Context.RECEIVER_EXPORTED);
+        }
 
         mHandler = mInjector.getHandler(this);
 
@@ -111,6 +122,7 @@ class DownloadVideoTask {
                         new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
                 return;
             }
+            Log.d(TAG, "startDownload()");
             startDownload();
         }
     }

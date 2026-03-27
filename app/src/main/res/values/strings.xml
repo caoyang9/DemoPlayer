@@ -8,7 +8,7 @@
     <string name="retail_demo_video_file_name">retail_demo.mp4</string>
 
     <!-- URL where the retail demo video can be downloaded from. [DO NOT TRANSLATE] -->
-    <string name="retail_demo_video_download_url"></string>
+    <string name="retail_demo_video_download_url">https://opplus.oss-cn-beijing.aliyuncs.com/DemoPlayer/retail_demo.mp4?Expires=1774625137&amp;OSSAccessKeyId=TMP.3KuPCuhemWPPnAtnLc86273fKF5ZhTH8Ja9oWkmqumQCxERJRS3QS8iTXscxho3XR5Hjo22BCCcyuukgW1HC2xE8h6xK3h&amp;Signature=TFArvb6vwCv%2BkGInKhE2opf0JSw%3D</string>
 
     <!-- The component name for the demo overlay app. [DO NOT TRANSLATE] -->
     <string name="demo_overlay_app_component" translatable="false"></string>
